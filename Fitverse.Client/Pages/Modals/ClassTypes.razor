@@ -1,0 +1,134 @@
+@using Fitverse.Client.Models
+@inject HttpClient Http
+
+<div class="flex flex-col" style="width: 70vw;">
+    <div class="flex flex-col">
+        <div class="flex flex-row justify-between w-full h-14 bg-fitversePaleBlue bg-opacity-20 mt-8 mb-4">
+            <div class="mx-16 my-auto font-bold">
+                Class types
+            </div>
+            <div class="flex flex-col justify-center bg-fitverseMint mx-16 my-auto h-1/2 w-40 shadow text-white text-center px-2 cursor-pointer" @onclick="AddClassTypeAsync">
+                ADD CLASS TYPE
+            </div>
+        </div>
+        <div class="mb-8">
+            @if (_isCalendarServiceAvailable)
+            {
+                <div class="flex flex-row justify-between w-full h-14 top-bar">
+                    <div class="flex flex-row justify-between flex-grow">
+                        <div class="w-1/3 my-auto ml-16">NAME</div>
+                        <div class="w-1/3 my-auto">LIMIT</div>
+                        <div class="w-1/3 my-auto">ROOM</div>
+                        <div class="w-1/3 my-auto">DURATION</div>
+                    </div>
+                    <div class="flex flex-col justify-center mr-16 my-auto h-1/2 w-40 px-2 invisible">
+                        DETAILS
+                    </div>
+                </div>
+                @for (var classTypeNumber = 0; classTypeNumber < _classTypesList.Count; classTypeNumber++)
+                {
+                    var classType = _classTypesList[classTypeNumber];
+                    <div class="flex flex-row justify-between w-full h-14">
+                        <div class="flex flex-row justify-between flex-grow">
+                            <div class="w-1/3 my-auto ml-16">@classType.Name</div>
+                            <div class="w-1/3 my-auto">@classType.Limit</div>
+                            <div class="w-1/3 my-auto">@classType.Room</div>
+                            <div class="w-1/3 my-auto">@classType.Duration</div>
+                        </div>
+                        <div class="flex flex-col justify-center bg-red-400 mr-16 my-auto h-1/2 w-40 shadow text-white text-center px-2 cursor-pointer" @onclick="async () => await DeleteClassTypeAsync(classType)">
+                                DELETE
+                        </div>
+                    </div>
+                }
+            }
+            else
+            {
+                <div class="mx-auto mt-8 italic text-fitverseMidGray">Calendar temporarily unavalible. Try again later.</div>
+            }
+        </div>
+    </div>
+</div>
+
+<style>
+    .blazored-modal{
+        padding: 0!important;
+        border: 0!important;
+    }
+    
+    .blazored-modal-header{
+        display: none!important;
+    }
+</style>
+
+@code {
+    [CascadingParameter]
+    public IModalService Modal { get; set; }
+
+    private List<ClassType> _classTypesList = new();
+    private bool _isCalendarServiceAvailable = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await GetClassTypeAsync();
+    }
+
+    private async Task DeleteClassTypeAsync(ClassType classType)
+    {
+        var options = new ModalOptions
+        {
+            Animation = ModalAnimation.FadeInOut(.3),
+            HideCloseButton = true
+        };
+
+        var parameters = new ModalParameters();
+        parameters.Add("ConfirmationMessage", $"Are you sure you want to delete the class type?");
+
+        var deleteClassTypeModal = Modal.Show<Confirmation>(null, parameters, options);
+        var result = await deleteClassTypeModal.Result;
+
+        if (!result.Cancelled)
+        {
+            await Http.DeleteAsync($"api/cs/calendar/settings/{classType.ClassTypeId}");
+            await GetClassTypeAsync();
+            StateHasChanged();
+        }
+    }   
+    private async Task AddClassTypeAsync()
+    {
+        var options = new ModalOptions
+        {
+            Animation = ModalAnimation.FadeInOut(.3),
+            HideCloseButton = true
+        };
+
+        var addTimetableModal = Modal.Show<AddClassType>(null, options);
+        var result = await addTimetableModal.Result;
+
+        if (!result.Cancelled)
+        {
+            await GetClassTypeAsync();
+            StateHasChanged();
+        }
+    }
+
+    private async Task GetClassTypeAsync()
+    {
+        try
+        {
+            var result = await Http.GetAsync("api/cs/calendar/settings");
+            result.EnsureSuccessStatusCode();
+
+            _classTypesList = await result.Content.ReadFromJsonAsync<List<ClassType>>();
+            if (_classTypesList is null)
+            {
+                throw new NullReferenceException();
+            }
+            _classTypesList = _classTypesList.OrderBy(x => x.Name).ToList();
+        }
+        catch (Exception e)
+        {
+            _isCalendarServiceAvailable = false;
+            _classTypesList = new List<ClassType>();
+        }
+    }
+}

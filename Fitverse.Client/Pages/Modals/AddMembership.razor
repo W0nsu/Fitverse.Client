@@ -1,0 +1,72 @@
+@using Fitverse.Client.Models
+@using Fitverse.Shared.Helpers
+@inject HttpClient Http
+@inject IJSRuntime JsRuntime;
+
+<div class="flex flex-row justify-center" style="width: 70vw;">
+    <EditForm Model="@membership" OnValidSubmit="@AddAsync" class="flex flex-col justify-center items-center w-1/2 mx-auto my-16">
+        <FluentValidationValidator/>
+        <div class="flex flex-col mb-8 w-full">
+            <label class="text-center">Name</label>
+            <input class="bg-fitverseDarkPurple bg-opacity-20 h-8 border border-black" @bind="membership.Name"/>
+            <ValidationMessage For="() => membership.Name"></ValidationMessage>
+        </div>
+        <div class="flex flex-col mb-8 w-full">
+            <label class="text-center">Duration</label>
+            <input type="number" class="bg-fitverseLightPurple bg-opacity-20 h-8 border border-black" @bind="membership.Duration"/>
+            <ValidationMessage For="() => membership.Duration"></ValidationMessage>
+        </div>
+            <div class="flex flex-col mb-8 w-full">
+                <label class="text-center">Installment price</label>
+                <input type="number" class="bg-fitversePaleBlue bg-opacity-20 h-8 border border-black" @bind="membership.InstallmentPrice"/>
+                <ValidationMessage For="() => membership.InstallmentPrice"></ValidationMessage>
+            </div>
+        <div class="flex flex-col mb-8 w-full">
+            <label class="text-center">Termination period</label>
+            <input type="number" class="bg-fitverseCyan bg-opacity-20 h-8 border border-black" @bind="membership.TerminationPeriod"/>
+            <ValidationMessage For="() => membership.TerminationPeriod"></ValidationMessage>
+        </div>
+        <div class="flex flex-col mb-8 w-full">
+            <label class="text-center">Period type</label>
+            <select class="h-10" @bind="membershipPeriodTypeString">
+                @foreach (var value in Enum.GetNames(typeof(PeriodType)))
+                    {
+                        <option value="@value">@value</option>
+                    }
+            </select>
+            <ValidationMessage For="() => membership.PeriodType"></ValidationMessage>
+        </div>
+        <div class="flex flex-col justify-center w-1/3 bg-fitverseMint shadow-md text-white text-center px-2 cursor-pointer">
+            <button id="SubmitButton" class="m-1" type="submit">ADD MEMBERSHIP</button>
+        </div>
+    </EditForm>
+</div>
+
+<style>
+    .blazored-modal{
+        padding: 0!important;
+        border: 0!important;
+    }
+    
+    .blazored-modal-header{
+        display: none!important;
+    }
+</style>
+
+@code {
+    [CascadingParameter]
+    BlazoredModalInstance ModalInstance { get; set; }
+
+    private Membership membership = new();
+
+    private string membershipPeriodTypeString = "-1";
+    
+    private async Task AddAsync()
+    {
+        await JsRuntime.InvokeVoidAsync("SubmitButtonDisable");
+        membership.PeriodType = (int)Enum.Parse(typeof(PeriodType), membershipPeriodTypeString);
+        _ = await Http.PostAsJsonAsync("api/as/agreements/settings", membership);
+
+        await ModalInstance.CloseAsync();
+    }
+}

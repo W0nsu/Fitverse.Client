@@ -1,0 +1,62 @@
+﻿@inject NavigationManager UriHelper;
+
+<nav class="flex flex-row justify-center flex-shrink-0 h-20 w-full m-0 px-2 text-white bg-gradient-to-r from-fitverseGradientStart to-fitverseGradientEnd text-center">
+    <div class="flex flex-row justify-between w-6/12 my-auto">
+        <div class="flex flex-row justify-center h-10 w-5/12 px-2 ml-2 text-2xl cursor-pointer" @onclick="@MembersRedirect">
+            <img src="img/logo.svg" alt="" class="h-3/5 my-auto">
+        </div>
+        <div class="flex flex-row justify-around w-6/12">
+            <div class="flex flex-col my-auto">
+                <div class="h-10/12 cursor-pointer" @onclick="@MembersRedirect">Members</div>
+                <div class="h-0.5 w-1/3 mx-auto @_activeMembers"></div>
+            </div>
+            <div class="flex flex-col my-auto">
+                <div class="h-10/12 cursor-pointer" @onclick="@AgreementsRedirect">Agreements</div>
+                <div class="h-0.5 w-1/3 mx-auto @_activeAgreements"></div>
+            </div>
+            <div class="flex flex-col my-auto">
+                <div class="h-10/12 cursor-pointer" @onclick="@CalendarRedirect">Calendar</div>
+                <div class="h-0.5 w-1/3 mx-auto @_activeCalendar"></div>
+            </div>
+        </div>
+    </div>
+    <div class="flex flex-row justify-end w-6/12 my-auto pr-12 h-full">
+        <div class="w-2/12 h-2/6 bg-fitverseDarkPurple shadow-lg text-xs clip-path my-auto flex flex-col justify-center cursor-pointer" @onclick="@LogoutRedirect">
+            <div>Logout</div>
+        </div>
+    </div>
+</nav>
+
+@code {
+    private string _activeMembers = "";
+    private string _activeAgreements = "";
+    private string _activeCalendar = "";
+
+    private void MembersRedirect()
+    {
+        UriHelper.NavigateTo("/members");
+        _activeMembers = "bg-white transition duration-300 ease-in-out";
+        _activeAgreements = _activeCalendar = "";
+    }
+    
+    private void AgreementsRedirect()
+    {
+        UriHelper.NavigateTo("/agreements");
+        _activeAgreements = "bg-white transition duration-500 ease-in-out";
+        _activeMembers = _activeCalendar = "";
+    }
+    
+    private void CalendarRedirect()
+    {
+        UriHelper.NavigateTo("/calendar");
+        _activeCalendar = "bg-white transition duration-500 ease-in-out";
+        _activeMembers = _activeAgreements = "";
+    }
+    
+    private void LogoutRedirect()
+    {
+        UriHelper.NavigateTo("/logout");
+        _activeCalendar = "bg-white transition duration-500 ease-in-out";
+        _activeMembers = _activeAgreements = _activeCalendar = "";
+    }
+}

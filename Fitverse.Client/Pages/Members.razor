@@ -1,0 +1,442 @@
+@inject HttpClient Http
+@inject NavigationManager UriHelper;
+
+@page "/Members"
+@using Fitverse.Client.Models
+@using Fitverse.Client.Pages.Modals
+
+@attribute [Authorize]
+<div class="flex flex-row justify-between w-full py-12 px-16 h-32 select-none">
+    <div class="flex flex-row justify-around w-1/2 h-full">
+        @if (IsMemberServiceAvalible)
+        {
+            <div class="flex flex-row bg-fitverseDarkPurple w-1/4 h-full shadow cursor-pointer" @onclick="@AddMember">
+                <img src="icon/Icon%20ionic-md-person-add.svg" alt="" class="p-2 h-full w-4/12">
+                <div class="text-xs text-white my-auto w-7/12">ADD MEMBER</div>
+            </div>
+        }
+        else
+        {
+            <div class="flex flex-row bg-fitverseMidGray w-1/4 h-full shadow">
+                <img src="icon/Icon%20ionic-md-person-add.svg" alt="" class="p-2 h-full w-4/12">
+                <div class="text-xs text-white my-auto w-7/12">ADD MEMBER</div>
+            </div>
+        }
+        <div class="flex flex-row justify-between w-1/2 bg-fitverseLightGray shadow text-black">
+            <input class="text-xs font-bold my-auto w-10/12 ml-2 bg-fitverseLightGray outline-none" @bind-value="_searchText" @bind-value:event="oninput" placeholder="SEARCH BY SURNAME">
+            <img src="icon/Icon%20awesome-search.svg" alt="" class="bg-fitversePaleBlue w-8 p-2 hidden">
+        </div>
+    </div>
+    <div class="flex flex-row justify-end w-1/2">
+        <div class="flex flex-row justify-around h-1/6 w-1/4">
+            @if (totalPages == 1)
+            {
+                <div class="text-xs rounded-full w-6 h-6 flex items-center invisible"></div>
+                <div class="text-xs rounded-full w-6 h-6 flex items-center justify-center bg-fitverseCyan text-black cursor-pointer" @onclick="() => SetPageNumber(pageNumber)">@pageNumber</div>
+                <div class="text-xs rounded-full w-6 h-6 flex items-center invisible"></div>
+                <div class="text-xs rounded-full w-6 h-6 flex items-center invisible"></div>
+                <div class="text-xs rounded-full w-6 h-6 flex items-center invisible"></div>
+            }
+            else if (totalPages == 2)
+            {
+                if (pageNumber == 1)
+                {
+                    <div class="text-xs rounded-full w-6 h-6 flex items-center invisible"></div>
+                    <div class="text-xs rounded-full w-6 h-6 flex items-center justify-center bg-fitverseCyan text-black cursor-pointer" @onclick="() => SetPageNumber(pageNumber)">@pageNumber</div>
+                    <div class="text-xs rounded-full w-6 h-6 flex items-center justify-center bg-fitverseMidGray text-black cursor-pointer" @onclick="() => SetPageNumber(pageNumber+1)">@(pageNumber+1)</div>
+                    <div class="text-xs rounded-full w-6 h-6 flex items-center invisible"></div>
+                    <div class="text-xs rounded-full w-6 h-6 flex items-center invisible"></div>
+                }
+                else
+                {
+                    <div class="text-xs rounded-full w-6 h-6 flex items-center invisible"></div>
+                    <div class="text-xs rounded-full w-6 h-6 flex items-center justify-center bg-fitverseMidGray text-black cursor-pointer" @onclick="() => SetPageNumber(pageNumber-1)">@(pageNumber-1)</div>
+                    <div class="text-xs rounded-full w-6 h-6 flex items-center justify-center bg-fitverseCyan text-black cursor-pointer" @onclick="() => SetPageNumber(pageNumber)">@pageNumber</div>
+                    <div class="text-xs rounded-full w-6 h-6 flex items-center invisible"></div>
+                    <div class="text-xs rounded-full w-6 h-6 flex items-center invisible"></div>
+                }
+            }
+            else
+            {
+                @if (pageNumber > 1)
+                {
+                    <div class="text-xs rounded-full w-6 h-6 flex items-center justify-center bg-fitverseMidGray text-black cursor-pointer" @onclick="DecrementPageNumber">
+                        <img src="icon/back.svg" alt="" class="h-1/2 w-1/2"/>
+                    </div>
+                }
+                else
+                {
+                    <div class="text-xs rounded-full w-6 h-6 flex items-center invisible" @onclick="DecrementPageNumber">
+                        <img src="icon/back.svg" alt="" class="h-1/2 w-1/2"/>
+                    </div>
+                }
+
+                @if (pageNumber <= totalPages - 2)
+                {
+                    <div class="text-xs rounded-full w-6 h-6 flex items-center justify-center bg-fitverseCyan text-black cursor-pointer" @onclick="() => SetPageNumber(pageNumber)">@pageNumber</div>
+                }
+                else if (pageNumber == totalPages)
+                {
+                    <div class="text-xs rounded-full w-6 h-6 flex items-center justify-center bg-fitverseMidGray text-black cursor-pointer" @onclick="() => SetPageNumber(pageNumber - 2)">@(pageNumber - 2)</div>
+                }
+                else
+                {
+                    <div class="text-xs rounded-full w-6 h-6 flex items-center justify-center bg-fitverseMidGray text-black cursor-pointer" @onclick="() => SetPageNumber(pageNumber - 1)">@(pageNumber - 1)</div>
+                }
+
+                @if (pageNumber == totalPages - 1)
+                {
+                    <div class="text-xs rounded-full w-6 h-6 flex items-center justify-center bg-fitverseCyan text-black cursor-pointer" @onclick="() => SetPageNumber(pageNumber)">@(pageNumber)</div>
+                }
+                else if (pageNumber == totalPages)
+                {
+                    <div class="text-xs rounded-full w-6 h-6 flex items-center justify-center bg-fitverseMidGray text-black cursor-pointer" @onclick="() => SetPageNumber(pageNumber - 1)">@(pageNumber - 1)</div>
+                }
+                else
+                {
+                    <div class="text-xs rounded-full w-6 h-6 flex items-center justify-center bg-fitverseMidGray text-black cursor-pointer" @onclick="() => SetPageNumber(pageNumber + 1)">@(pageNumber + 1)</div>
+                }
+
+                @if (pageNumber == totalPages)
+                {
+                    <div class="text-xs rounded-full w-6 h-6 flex items-center justify-center bg-fitverseCyan text-black cursor-pointer" @onclick="() => SetPageNumber(pageNumber)">@(pageNumber)</div>
+                }
+                else if (pageNumber == totalPages - 1)
+                {
+                    <div class="text-xs rounded-full w-6 h-6 flex items-center justify-center bg-fitverseMidGray text-black cursor-pointer" @onclick="() => SetPageNumber(pageNumber + 1)">@(pageNumber + 1)</div>
+                }
+                else
+                {
+                    <div class="text-xs rounded-full w-6 h-6 flex items-center justify-center bg-fitverseMidGray text-black cursor-pointer" @onclick="() => SetPageNumber(pageNumber + 2)">@(pageNumber + 2)</div>
+                }
+
+
+                @if (pageNumber != totalPages)
+                {
+                    <div class="text-xs rounded-full w-6 h-6 flex items-center justify-center bg-fitverseMidGray text-black cursor-pointer" @onclick="IncrementPageNumber">
+                        <img src="icon/next.svg" alt="" class="h-1/2 w-1/2"/>
+                    </div>
+                }
+                else
+                {
+                    <div class="text-xs rounded-full w-6 h-6 flex items-center invisible" @onclick="IncrementPageNumber">
+                        <img src="icon/next.svg" alt="" class="h-1/2 w-1/2"/>
+                    </div>
+                }
+            }
+        </div>
+    </div>
+</div>
+
+<section class="flex flex-col text-left mb-auto">
+    <div class="flex flex-row justify-between h-10 top-bar">
+        <div class="flex flex-row w-5/6 justify-between">
+            <div class="w-1/5"></div>
+            <div class="my-auto w-1/5">SURNAME</div>
+            <div class="my-auto w-1/5">NAME</div>
+            <div class="my-auto w-1/5">EMAIL</div>
+        </div>
+        <div class="my-auto w-1/6"></div>
+    </div>
+    @if (IsMemberServiceAvalible)
+    {
+        @for (var memberNumber = 0; memberNumber < PaginatedFilteredMembersList.Count; memberNumber++)
+        {
+            var member = PaginatedFilteredMembersList[memberNumber];
+            <div class="flex flex-row justify-between h-24 @MemberColor(memberNumber + 1) bg-opacity-20">
+                <div class="flex flex-row w-5/6 justify-between cursor-pointer" @onclick="async () => await ShowMemberDetailsAsync(member.MemberId)">
+                    <div class="flex flex-wrap justify-end w-1/5 h-full py-4">
+                        <div class="h-full px-4">
+                            <img src="https://www.creative-tim.com/learning-lab/tailwind-starter-kit/img/team-2-800x800.jpg" alt="..." class="shadow rounded-full max-w-full h-full align-middle border-none"/>
+                        </div>
+                    </div>
+                    <div class="w-1/5 text-left my-auto font-bold mr-2">@PaginatedFilteredMembersList[memberNumber].SurName</div>
+                    <div class="w-1/5 text-left my-auto">@PaginatedFilteredMembersList[memberNumber].Name</div>
+                    <div class="w-1/5 text-left my-auto">@PaginatedFilteredMembersList[memberNumber].Email</div>
+                </div>
+                <div class="w-1/6 text-left my-auto">
+                    <img src="icon/Icon%20material-delete-forever-gray.svg" alt="" class="my-auto h-1/2 w-4 mr-auto cursor-pointer" @onclick="async () => await DeleteMemberAsync(member)">
+                </div>
+            </div>
+        }
+    }
+    else
+    {
+        <div class="mx-auto my-8 italic text-fitverseMidGray">Members temporarily unavalible. Try again later.</div>
+    }
+    <div class="flex flex-row justify-between w-full py-8 px-16 h-24">
+            <div class="w-1/2 h-full"></div>
+            <div class="flex flex-row justify-end w-1/2">
+                <div class="flex flex-row justify-around h-1/6 w-1/4">
+            @if (totalPages == 1)
+            {
+                <div class="text-xs rounded-full w-6 h-6 flex items-center invisible"></div>
+                <div class="text-xs rounded-full w-6 h-6 flex items-center justify-center bg-fitverseCyan text-black cursor-pointer" @onclick="() => SetPageNumber(pageNumber)">@pageNumber</div>
+                <div class="text-xs rounded-full w-6 h-6 flex items-center invisible"></div>
+                <div class="text-xs rounded-full w-6 h-6 flex items-center invisible"></div>
+                <div class="text-xs rounded-full w-6 h-6 flex items-center invisible"></div>
+            }
+            else if (totalPages == 2)
+            {
+                if (pageNumber == 1)
+                {
+                    <div class="text-xs rounded-full w-6 h-6 flex items-center invisible"></div>
+                    <div class="text-xs rounded-full w-6 h-6 flex items-center justify-center bg-fitverseCyan text-black cursor-pointer" @onclick="() => SetPageNumber(pageNumber)">@pageNumber</div>
+                    <div class="text-xs rounded-full w-6 h-6 flex items-center justify-center bg-fitverseMidGray text-black cursor-pointer" @onclick="() => SetPageNumber(pageNumber+1)">@(pageNumber+1)</div>
+                    <div class="text-xs rounded-full w-6 h-6 flex items-center invisible"></div>
+                    <div class="text-xs rounded-full w-6 h-6 flex items-center invisible"></div>
+                }
+                else
+                {
+                    <div class="text-xs rounded-full w-6 h-6 flex items-center invisible"></div>
+                    <div class="text-xs rounded-full w-6 h-6 flex items-center justify-center bg-fitverseMidGray text-black cursor-pointer" @onclick="() => SetPageNumber(pageNumber-1)">@(pageNumber-1)</div>
+                    <div class="text-xs rounded-full w-6 h-6 flex items-center justify-center bg-fitverseCyan text-black cursor-pointer" @onclick="() => SetPageNumber(pageNumber)">@pageNumber</div>
+                    <div class="text-xs rounded-full w-6 h-6 flex items-center invisible"></div>
+                    <div class="text-xs rounded-full w-6 h-6 flex items-center invisible"></div>
+                }
+            }
+            else
+            {
+                @if (pageNumber > 1)
+                {
+                    <div class="text-xs rounded-full w-6 h-6 flex items-center justify-center bg-fitverseMidGray text-black cursor-pointer" @onclick="DecrementPageNumber">
+                        <img src="icon/back.svg" alt="" class="h-1/2 w-1/2"/>
+                    </div>
+                }
+                else
+                {
+                    <div class="text-xs rounded-full w-6 h-6 flex items-center invisible" @onclick="DecrementPageNumber">
+                        <img src="icon/back.svg" alt="" class="h-1/2 w-1/2"/>
+                    </div>
+                }
+
+                @if (pageNumber <= totalPages - 2)
+                {
+                    <div class="text-xs rounded-full w-6 h-6 flex items-center justify-center bg-fitverseCyan text-black cursor-pointer" @onclick="() => SetPageNumber(pageNumber)">@pageNumber</div>
+                }
+                else if (pageNumber == totalPages)
+                {
+                    <div class="text-xs rounded-full w-6 h-6 flex items-center justify-center bg-fitverseMidGray text-black cursor-pointer" @onclick="() => SetPageNumber(pageNumber - 2)">@(pageNumber - 2)</div>
+                }
+                else
+                {
+                    <div class="text-xs rounded-full w-6 h-6 flex items-center justify-center bg-fitverseMidGray text-black cursor-pointer" @onclick="() => SetPageNumber(pageNumber - 1)">@(pageNumber - 1)</div>
+                }
+
+                @if (pageNumber == totalPages - 1)
+                {
+                    <div class="text-xs rounded-full w-6 h-6 flex items-center justify-center bg-fitverseCyan text-black cursor-pointer" @onclick="() => SetPageNumber(pageNumber)">@(pageNumber)</div>
+                }
+                else if (pageNumber == totalPages)
+                {
+                    <div class="text-xs rounded-full w-6 h-6 flex items-center justify-center bg-fitverseMidGray text-black cursor-pointer" @onclick="() => SetPageNumber(pageNumber - 1)">@(pageNumber - 1)</div>
+                }
+                else
+                {
+                    <div class="text-xs rounded-full w-6 h-6 flex items-center justify-center bg-fitverseMidGray text-black cursor-pointer" @onclick="() => SetPageNumber(pageNumber + 1)">@(pageNumber + 1)</div>
+                }
+
+                @if (pageNumber == totalPages)
+                {
+                    <div class="text-xs rounded-full w-6 h-6 flex items-center justify-center bg-fitverseCyan text-black cursor-pointer" @onclick="() => SetPageNumber(pageNumber)">@(pageNumber)</div>
+                }
+                else if (pageNumber == totalPages - 1)
+                {
+                    <div class="text-xs rounded-full w-6 h-6 flex items-center justify-center bg-fitverseMidGray text-black cursor-pointer" @onclick="() => SetPageNumber(pageNumber + 1)">@(pageNumber + 1)</div>
+                }
+                else
+                {
+                    <div class="text-xs rounded-full w-6 h-6 flex items-center justify-center bg-fitverseMidGray text-black cursor-pointer" @onclick="() => SetPageNumber(pageNumber + 2)">@(pageNumber + 2)</div>
+                }
+
+
+                @if (pageNumber != totalPages)
+                {
+                    <div class="text-xs rounded-full w-6 h-6 flex items-center justify-center bg-fitverseMidGray text-black cursor-pointer" @onclick="IncrementPageNumber">
+                        <img src="icon/next.svg" alt="" class="h-1/2 w-1/2"/>
+                    </div>
+                }
+                else
+                {
+                    <div class="text-xs rounded-full w-6 h-6 flex items-center invisible" @onclick="IncrementPageNumber">
+                        <img src="icon/next.svg" alt="" class="h-1/2 w-1/2"/>
+                    </div>
+                }
+            }
+                </div>
+            </div>
+        </div>
+    
+</section>
+
+@code {
+
+    [CascadingParameter]
+    public IModalService Modal { get; set; }
+
+    private string _searchText = "";
+    private string _previousSearchText;
+    private int pageSize = 20;
+    private int pageNumber = 1;
+    private int totalPages => SetTotalPages();
+
+    private bool IsMemberServiceAvalible = true;
+
+    List<Member> _membersList = new();
+    List<Member> FilteredMembersList => _membersList.Where(member => member.SurName.ToLower().Contains(_searchText.ToLower())).ToList();
+
+    List<Member> PaginatedFilteredMembersList => MembersListPagination();
+
+    protected override async Task OnInitializedAsync()
+    {
+        _membersList = await GetMembersAsync();
+        if (_membersList is not null)
+        {
+            MembersListPagination();
+        }
+    }
+
+    private List<Member> MembersListPagination()
+    {
+        if (_previousSearchText != _searchText)
+        {
+            pageNumber = 1;
+            StateHasChanged();
+        }
+        _previousSearchText = _searchText;
+        return FilteredMembersList.Skip((pageNumber - 1) * pageSize).Take(pageSize).ToList();
+    }
+
+    private async Task AddMember()
+    {
+        var options = new ModalOptions
+        {
+            HideCloseButton = true
+        };
+
+        var addMemberModal = Modal.Show<AddMember>(null, options);
+        var result = await addMemberModal.Result;
+
+        if (!result.Cancelled)
+        {
+            _membersList = await GetMembersAsync();
+        }
+    }
+
+    private async Task ShowMemberDetailsAsync(int memberId)
+    {
+        var options = new ModalOptions
+        {
+            Animation = ModalAnimation.FadeInOut(.3),
+            ContentScrollable = true,
+            HideCloseButton = true
+        };
+
+        var parameters = new ModalParameters();
+        parameters.Add("MemberDetails", await GetMemberDetailAsync(memberId));
+
+        Modal.Show<MemberProfile>(null, parameters, options);
+    }
+
+    private async Task<List<Member>> GetMembersAsync()
+    {
+        try
+        {
+            var result = await Http.GetAsync("api/ms/members");
+            result.EnsureSuccessStatusCode();
+
+            var members = await result.Content.ReadFromJsonAsync<List<Member>>();
+            return members?.OrderBy(member => member.SurName).ToList();
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine(e);
+            IsMemberServiceAvalible = false;
+            return new List<Member>();
+        }
+    }
+
+    private async Task<Member> GetMemberDetailAsync(int memberId)
+    {
+        return await Http.GetFromJsonAsync<Member>($"api/ms/members/{memberId}");
+    }
+
+    private async Task DeleteMemberAsync(Member member)
+    {
+        var options = new ModalOptions
+        {
+            Animation = ModalAnimation.FadeInOut(.3),
+            HideCloseButton = true
+        };
+
+        var parameters = new ModalParameters();
+        parameters.Add("ConfirmationMessage", $"Are you sure you want to delete the member '{member.SurName} {member.Name}'?");
+
+        var deleteMemberModal = Modal.Show<Confirmation>(null, parameters, options);
+        var result = await deleteMemberModal.Result;
+
+        if (!result.Cancelled)
+        {
+            await Http.DeleteAsync($"api/ms/members/{member.MemberId}");
+            _membersList = await GetMembersAsync();
+        }
+    }
+
+    private void IncrementPageNumber()
+    {
+        if (pageNumber >= totalPages)
+            return;
+        pageNumber++;
+    }
+
+    private void DecrementPageNumber()
+    {
+        if (pageNumber <= 1)
+            return;
+        pageNumber--;
+    }
+
+    private void SetPageNumber(int number)
+    {
+        if (number > totalPages)
+            return;
+        pageNumber = number;
+    }
+
+    private string MemberColor(int memberNumber)
+    {
+        switch (memberNumber)
+        {
+            case 2:
+            case 10:
+            case 14:
+                return "bg-fitversePaleBlue";
+            case 4:
+            case 8:
+            case 16:
+            case 20:
+                return "bg-fitverseLightPurple";
+            case 6:
+            case 18:
+                return "bg-fitverseDarkPurple";
+            case 12:
+                return "bg-fitverseCyan";
+        }
+        return "bg-white";
+    }
+
+    private int SetTotalPages()
+    {
+        var pagesCount = (float) FilteredMembersList.Count / pageSize;
+        if (pagesCount <= 0)
+        {
+            return 1;
+        }
+        if (pagesCount > (int) pagesCount)
+        {
+            return (int) pagesCount + 1;
+        }
+        return (int) pagesCount;
+    }
+
+}

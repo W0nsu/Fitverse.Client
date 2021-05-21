@@ -1,0 +1,16 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer utilities{
+    .clip-path{
+        clip-path: polygon(0 0, 100% 1%, 85% 100%, 0% 100%);
+    }
+    
+    .top-bar{
+        font-family: "Roboto", sans-serif;
+        font-weight: lighter;
+        color: #919191;
+        background-color: #F3F3F3;
+    }
+}

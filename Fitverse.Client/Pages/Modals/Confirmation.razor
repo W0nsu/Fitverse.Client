@@ -1,0 +1,45 @@
+<div class="flex flex-row justify-center" style="width: 50vw;">
+    <div class="flex flex-col justify-center items-end w-3/4 my-8">
+        <div class="mx-auto mb-8 text-lg">@ConfirmationMessage</div>
+        <div class="flex flex-row justify-center w-full">
+            <div class="flex flex-col justify-center w-1/4 bg-fitverseMint mr-8 shadow-md text-white text-center px-2 cursor-pointer" @onclick="ConfirmAction">
+                <button class="m-1 outline-none" type="submit">CONFIRM</button>
+            </div>
+            <div class="flex flex-col justify-center w-1/4 bg-fitverseMidGray shadow-md text-black text-center px-2 cursor-pointer" @onclick="CancelAction">
+                <button class="m-1 outline-none" type="submit">CANCEL</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .blazored-modal{
+        padding: 0!important;
+        border: 0!important;
+    }
+    
+    .blazored-modal-header{
+        display: none!important;
+    }
+    
+    button:focus{
+    outline: 0!important;
+    }
+</style>
+@code {
+    [CascadingParameter]
+    BlazoredModalInstance ModalInstance { get; set; }
+
+    [Parameter]
+    public string ConfirmationMessage { get; set; }
+
+    private async Task ConfirmAction()
+    {
+        await ModalInstance.CloseAsync(ModalResult.Ok(""));
+    }
+
+    private async Task CancelAction()
+    {
+        await ModalInstance.CancelAsync();
+    }
+}

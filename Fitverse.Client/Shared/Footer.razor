@@ -1,0 +1,18 @@
+<footer class="flex flex-col h-16 flex-shrink-0">
+    <div class="bg-white h-1"></div>
+    <div class="flex flex-col text-white bg-gradient-to-r from-fitverseGradientStart to-fitverseGradientEnd h-full">
+        <div class="flex flex-row my-auto pl-24 h-1/2">
+            <img src="icon/copyright.svg" alt="" class="my-auto h-3/4 mr-1.5"/>
+            <div class="my-auto font-thin">Fitverse @CheckYear()</div>
+        </div>
+    </div>
+</footer>
+
+@code {
+
+    private int CheckYear()
+    {
+        var dateTime = DateTime.Now;
+        return dateTime.Year;
+    }
+}

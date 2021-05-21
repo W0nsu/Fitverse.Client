@@ -1,0 +1,7 @@
+﻿@inject NavigationManager uriHelper;
+@page "/"
+
+@code{
+    protected override async Task OnInitializedAsync() => 
+        uriHelper.NavigateTo("/members");
+}

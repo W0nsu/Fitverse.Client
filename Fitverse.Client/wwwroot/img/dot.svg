@@ -1,0 +1,33 @@
+<svg id="Component_2_1" data-name="Component 2 – 1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="252" height="14" viewBox="0 0 252 14">
+  <defs>
+    <clipPath id="clip-path">
+      <rect width="252" height="14" fill="none"/>
+    </clipPath>
+  </defs>
+  <g id="Repeat_Grid_1" data-name="Repeat Grid 1" opacity="0.57" clip-path="url(#clip-path)">
+    <g transform="translate(-623 -99)">
+      <circle id="Ellipse_1" data-name="Ellipse 1" cx="7" cy="7" r="7" transform="translate(623 99)" fill="#fff"/>
+    </g>
+    <g transform="translate(-589 -99)">
+      <circle id="Ellipse_1-2" data-name="Ellipse 1" cx="7" cy="7" r="7" transform="translate(623 99)" fill="#fff"/>
+    </g>
+    <g transform="translate(-555 -99)">
+      <circle id="Ellipse_1-3" data-name="Ellipse 1" cx="7" cy="7" r="7" transform="translate(623 99)" fill="#fff"/>
+    </g>
+    <g transform="translate(-521 -99)">
+      <circle id="Ellipse_1-4" data-name="Ellipse 1" cx="7" cy="7" r="7" transform="translate(623 99)" fill="#fff"/>
+    </g>
+    <g transform="translate(-487 -99)">
+      <circle id="Ellipse_1-5" data-name="Ellipse 1" cx="7" cy="7" r="7" transform="translate(623 99)" fill="#fff"/>
+    </g>
+    <g transform="translate(-453 -99)">
+      <circle id="Ellipse_1-6" data-name="Ellipse 1" cx="7" cy="7" r="7" transform="translate(623 99)" fill="#fff"/>
+    </g>
+    <g transform="translate(-419 -99)">
+      <circle id="Ellipse_1-7" data-name="Ellipse 1" cx="7" cy="7" r="7" transform="translate(623 99)" fill="#fff"/>
+    </g>
+    <g transform="translate(-385 -99)">
+      <circle id="Ellipse_1-8" data-name="Ellipse 1" cx="7" cy="7" r="7" transform="translate(623 99)" fill="#fff"/>
+    </g>
+  </g>
+</svg>

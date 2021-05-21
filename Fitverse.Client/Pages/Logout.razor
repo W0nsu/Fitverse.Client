@@ -1,0 +1,13 @@
+@page "/logout"
+@using Fitverse.Client.Authentication
+@inject IAuthenticationService authenticationService;
+@inject NavigationManager NavigationManager;
+
+@attribute [Authorize]
+@code {
+    protected override async Task OnInitializedAsync()
+    {
+        await authenticationService.LogoutAsync();
+        NavigationManager.NavigateTo("/login");
+    }
+}

@@ -1,0 +1,410 @@
+@using Fitverse.Client.Models
+@inject HttpClient Http
+@inject NavigationManager UriHelper;
+@inject IJSRuntime JsRuntime
+
+<section class="flex flex-col" style="width: 70vw;">
+<div class="flex flex-row justify-around h-48 my-8 pl-10">
+    <div class="w-1/4">
+        <img src="https://www.creative-tim.com/learning-lab/tailwind-starter-kit/img/team-2-800x800.jpg" alt="..." class="shadow rounded-full h-full align-middle border-none m-0"/>
+    </div>
+    <div class="flex flex-col text-lg w-1/4 pr-10">
+        <div class="h-6">
+        </div>
+        <div class="flex flex-row font-bold text-xl mx-auto">
+            @MemberDetails.SurName @MemberDetails.Name
+        </div>
+        <div class="flex flex-row w-1/2">
+            <img src="icon/Icon%20awesome-birthday-cake.svg" alt="" class="h-4 w-4 my-auto mx-3"/>
+            <div>@MemberDetails.BirthDate.ToString("dd/MM/yyyy")</div>
+        </div>
+        <div class="flex flex-row w-1/2">
+            <img src="icon/Icon%20ionic-ios-mail.svg" alt="" class="h-4 w-4 my-auto mx-3"/>
+            <div>@MemberDetails.Email</div>
+        </div>
+        <div class="flex flex-row w-1/2">
+            <img src="icon/Icon%20awesome-phone-alt.svg" alt="" class="h-4 w-4 my-auto mx-3"/>
+            @if (MemberDetails.PhoneNumber is not null)
+            {
+                <div>@MemberDetails.PhoneNumber</div>
+            }
+            else
+            {
+                <div> - </div>
+            }
+        </div>
+        <div class="flex flex-row w-1/2">
+            <div class="font-bold text-fitverseCyan h-4 mx-3">PESEL</div>
+            <div>@MemberDetails.Pesel</div>
+        </div>
+    </div>
+    <div class="flex flex-col text-lg text-white w-1/6">
+        <div class="h-6">
+        </div>
+        <div class="flex flex-row bg-fitverseDarkPurple shadow mb-4 cursor-pointer" @onclick="ShowEditMemberForm">
+            <img src="icon/Icon%20awesome-user-edit.svg" alt="" class="h-5 w-5 my-auto mx-2">
+            <div>Edit data</div>
+        </div>
+        <div class="flex flex-row bg-fitverseLightPurple shadow cursor-pointer" @onclick="() => DeleteMemberAsync(MemberDetails)">
+            <img src="icon/Icon%20material-delete-forever-white.svg" alt="" class="h-5 w-5 my-auto mx-2">
+            <div>Delete member</div>
+        </div>
+    </div>
+</div>
+<div class="flex flex-col">
+    <div class="flex flex-row justify-between w-full h-14 bg-fitversePaleBlue bg-opacity-20">
+        <div class="mx-16 my-auto font-bold">
+            Active Memberships
+        </div>
+        <div class="flex flex-col justify-center bg-fitverseMint mx-16 my-auto h-1/2 w-40 shadow text-white text-center px-2 cursor-pointer" @onclick="ShowAddingAgreementFromAsync">
+            ADD AGREEMENT
+        </div>
+    </div>
+    <div class="mb-8">
+        @if (_isAgreementServiceAvailable)
+        {
+            @foreach (var agreement in _activeAgreementsList)
+            {
+                <div class="flex flex-row justify-between w-full h-14">
+                    <div class="flex flex-row justify-between flex-grow">
+                        <div class="w-1/3 my-auto ml-16 font-thin">@agreement.StartingDate.ToString("dd/MM/yyyy") - @agreement.EndingDate.ToString("dd/MM/yyyy")</div>
+                        <div class="w-1/3 my-auto font-bold">@agreement.Name</div>
+                        @if (agreement.IsPaid)
+                        {
+                            <div class="w-1/4 my-auto mr-16 text-fitverseMint font-bold">Paid</div>
+                        }
+                        else
+                        {
+                            <div class="w-1/4 my-auto mr-16 text-red-500 font-bold">Not Paid</div>
+                        }
+                    </div>
+                    @if (!_idsOfShowDetailsButtonClicked.Contains(agreement.AgreementId))
+                    {
+                        <div class="flex flex-col justify-center bg-fitverseCyan mx-16 my-auto h-1/2 w-40 shadow text-white text-center px-2 cursor-pointer" @onclick="() => GetAllInstallments(agreement)">
+                            DETAILS
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="flex flex-col justify-center bg-fitverseLightPurple mx-16 my-auto h-1/2 w-40 shadow text-white text-center px-2 cursor-pointer" @onclick="() => DisplayDetailsButton(agreement)">
+                            Hide
+                        </div>
+                    }
+
+                </div>
+                @if (_idsOfShowDetailsButtonClicked.Contains(agreement.AgreementId))
+                {
+                    <div class="flex flex-col">
+                        <div class="flex flex-row justify-between w-full h-14 bg-fitverseLightGray font-thin">
+                            <div class="flex flex-row justify-between flex-grow">
+                                <div class="w-1/3 my-auto ml-16">Installment period</div>
+                                <div class="w-1/3 my-auto">Due date</div>
+                                <div class="w-1/4 my-auto mr-16">Paid</div>
+                            </div>
+                            <div class="flex flex-col justify-center mx-16 my-auto h-1/2 w-40 text-center px-2">
+                                Price
+                            </div>
+                        </div>
+                        @foreach (var installment in _allAgreementsInstallments.Where(installment => installment.AgreementId == agreement.AgreementId))
+                        {
+                            <div class="flex flex-row justify-between w-full h-14 bg-fitverseLightGray">
+                                <div class="flex flex-row justify-between flex-grow">
+                                    <div class="w-1/3 my-auto ml-16">@installment.StartingDate.ToString("dd/MM/yyyy") - @installment.EndingDate.ToString("dd/MM/yyyy")</div>
+                                    <div class="w-1/3 my-auto">@installment.DueDate.ToString("dd/MM/yyyy")</div>
+                                    <div class="w-1/4 my-auto mr-16">
+                                        <input type="checkbox" @bind="installment.IsPaid" @onclick="() => InstallmentIsPaidChange(installment)" style="outline: none!important">
+                                    </div>
+                                </div>
+                                <div class="flex flex-col justify-center mx-16 my-auto h-1/2 w-40 text-center px-2">
+                                    @installment.Price $
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+            }
+        }
+        else
+        {
+            <div class="mx-auto mt-8 italic text-fitverseMidGray">Agreements temporarily unavalible. Try again later.</div>
+        }
+    </div>
+</div>
+<div>
+    <div class="flex flex-row justify-between w-full h-14 bg-fitversePaleBlue bg-opacity-20">
+        <div class="mx-16 my-auto font-bold">
+            Finished Memberships
+        </div>
+    </div>
+    <div class="mb-8">
+        @if (_isAgreementServiceAvailable)
+        {
+            @foreach (var agreement in _finishedAgreementsList)
+            {
+                <div class="flex flex-row justify-between w-full h-14">
+                    <div class="flex flex-row justify-between flex-grow">
+                        <div class="w-1/3 my-auto ml-16 font-thin">@agreement.StartingDate.ToString("dd/MM/yyyy") - @agreement.EndingDate.ToString("dd/MM/yyyy")</div>
+                        <div class="w-1/3 my-auto font-bold">@agreement.Name</div>
+                        @if (agreement.IsPaid)
+                        {
+                            <div class="w-1/4 my-auto mr-16 text-fitverseMint font-bold">Paid</div>
+                        }
+                        else
+                        {
+                            <div class="w-1/4 my-auto mr-16 text-red-500 font-bold">Not Paid</div>
+                        }
+                    </div>
+                    @if (!_idsOfShowDetailsButtonClicked.Contains(agreement.AgreementId))
+                    {
+                        <div class="flex flex-col justify-center bg-fitverseCyan mx-16 my-auto h-1/2 w-40 shadow text-white text-center px-2 cursor-pointer" @onclick="() => GetAllInstallments(agreement)">
+                            DETAILS
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="flex flex-col justify-center bg-fitverseLightPurple mx-16 my-auto h-1/2 w-40 shadow text-white text-center px-2 cursor-pointer" @onclick="() => DisplayDetailsButton(agreement)">
+                            Hide
+                        </div>
+                    }
+
+                </div>
+                @if (_idsOfShowDetailsButtonClicked.Contains(agreement.AgreementId))
+                {
+                    <div class="flex flex-col">
+                        <div class="flex flex-row justify-between w-full h-14 bg-fitverseLightGray font-thin">
+                            <div class="flex flex-row justify-between flex-grow">
+                                <div class="w-1/3 my-auto ml-16">Installment period</div>
+                                <div class="w-1/3 my-auto">Due date</div>
+                                <div class="w-1/4 my-auto mr-16">Paid</div>
+                            </div>
+                            <div class="flex flex-col justify-center mx-16 my-auto h-1/2 w-40 text-center px-2">
+                                Price
+                            </div>
+                        </div>
+                        @foreach (var installment in _allAgreementsInstallments.Where(installment => installment.AgreementId == agreement.AgreementId))
+                        {
+                            <div class="flex flex-row justify-between w-full h-14 bg-fitverseLightGray">
+                                <div class="flex flex-row justify-between flex-grow">
+                                    <div class="w-1/3 my-auto ml-16">@installment.StartingDate.ToString("dd/MM/yyyy") - @installment.EndingDate.ToString("dd/MM/yyyy")</div>
+                                    <div class="w-1/3 my-auto">@installment.DueDate.ToString("dd/MM/yyyy")</div>
+                                    <div class="w-1/4 my-auto mr-16">
+                                        <input type="checkbox" @bind="installment.IsPaid" @onclick="() => InstallmentIsPaidChange(installment)">
+                                    </div>
+                                </div>
+                                <div class="flex flex-col justify-center mx-16 my-auto h-1/2 w-40 text-center px-2">
+                                    @installment.Price $
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+            }
+        }
+        else
+        {
+            <div class="mx-auto mt-8 italic text-fitverseMidGray">Agreements temporarily unavalible. Try again later.</div>
+        }
+
+    </div>
+</div>
+</section>
+
+<style>
+    .blazored-modal{
+        padding: 0!important;
+        border: 0!important;
+    }
+    
+    .blazored-modal-header{
+        display: none!important;
+    }
+    
+    input[type=checkbox]:checked {
+        outline: 0!important;
+        background-color: #5905D4!important;
+    }
+    
+    input[type=checkbox]:checked:focus {
+        outline: 0!important;
+    }
+    
+    input[type=checkbox]:focus {
+        outline: 0!important;
+        border: none!important;
+    }
+    
+</style>
+
+@code {
+    [CascadingParameter]
+    public IModalService Modal { get; set; }
+
+    [Parameter]
+    public Member MemberDetails { get; set; }
+
+    private List<Agreement> _agreementsList = new();
+    private List<Agreement> _activeAgreementsList = new();
+    private List<Agreement> _finishedAgreementsList = new();
+
+    private List<Installment> _allAgreementsInstallments = new();
+
+    private readonly List<int> _idsOfShowDetailsButtonClicked = new();
+
+    private bool _isAgreementServiceAvailable = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _agreementsList = await GetAllAgreementsAsync(MemberDetails);
+        SegregateActiveAndFinishedAgreements(_agreementsList);
+    }
+
+    private void SegregateActiveAndFinishedAgreements(List<Agreement> agreements)
+    {
+        _activeAgreementsList.Clear();
+        _finishedAgreementsList.Clear();
+        foreach (var agreement in agreements)
+        {
+            if (agreement.EndingDate < DateTime.Now)
+            {
+                _finishedAgreementsList.Add(agreement);
+            }
+            else
+            {
+                _activeAgreementsList.Add(agreement);
+            }
+        }
+        _activeAgreementsList = _activeAgreementsList
+            .OrderBy(x => x.StartingDate).ToList();
+
+        _finishedAgreementsList = _finishedAgreementsList
+            .OrderByDescending(x => x.EndingDate).ToList();
+    }
+
+    private async Task DeleteMemberAsync(Member member)
+    {
+        var options = new ModalOptions
+        {
+            Animation = ModalAnimation.FadeInOut(.3),
+            HideCloseButton = true
+        };
+
+        var parameters = new ModalParameters();
+        parameters.Add("ConfirmationMessage", $"Are you sure you want to delete the member '{member.SurName} {member.Name}'?");
+
+        var deleteMemberModal = Modal.Show<Confirmation>(null, parameters, options);
+        var result = await deleteMemberModal.Result;
+
+        if (!result.Cancelled)
+        {
+            await Http.DeleteAsync($"api/ms/members/{member.MemberId}");
+            UriHelper.NavigateTo(UriHelper.Uri, true);
+        }
+    }
+
+    private async Task<List<Agreement>> GetAllAgreementsAsync(Member member)
+    {
+        try
+        {
+            var result = await Http.GetAsync($"api/as/agreements/member/{member.MemberId}");
+            result.EnsureSuccessStatusCode();
+
+            var agreements = await result.Content.ReadFromJsonAsync<List<Agreement>>();
+            return agreements;
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine(e);
+            _isAgreementServiceAvailable = false;
+            return new List<Agreement>();
+        }
+    }
+
+    private async Task GetAllInstallments(Agreement agreement)
+    {
+        _idsOfShowDetailsButtonClicked.Add(agreement.AgreementId);
+        var singleAgreementInstallments = await Http.GetFromJsonAsync<List<Installment>>($"api/as/agreements/{agreement.AgreementId}/installments");
+        if (singleAgreementInstallments is not null)
+        {
+            foreach (var installment in singleAgreementInstallments)
+                _allAgreementsInstallments.Add(installment);
+        }
+        _allAgreementsInstallments = _allAgreementsInstallments.OrderBy(x => x.StartingDate).ToList();
+    }
+
+    private async Task InstallmentIsPaidChange(Installment installment)
+    {
+        var options = new ModalOptions
+        {
+            Animation = ModalAnimation.FadeInOut(.3),
+            HideCloseButton = true
+        };
+
+        var parameters = new ModalParameters();
+        parameters.Add("ConfirmationMessage", !installment.IsPaid ? "Are you sure you want to mark installment as paid?" : "Are you sure you want to mark installment as unpaid?");
+
+        var checkInstallmentModal = Modal.Show<Confirmation>(null, parameters, options);
+        var result = await checkInstallmentModal.Result;
+
+        if (!result.Cancelled)
+        {
+            _ = await Http.PutAsync($"api/as/agreements/installments/{installment.Id}/pay", null);
+            _agreementsList = await GetAllAgreementsAsync(MemberDetails);
+            SegregateActiveAndFinishedAgreements(_agreementsList);
+        }
+        else
+        {
+            installment.IsPaid = !installment.IsPaid;
+        }
+
+        StateHasChanged();
+    }
+
+    private void DisplayDetailsButton(Agreement agreement)
+    {
+        _idsOfShowDetailsButtonClicked.Remove(agreement.AgreementId);
+        _allAgreementsInstallments.RemoveAll(x => x.AgreementId == agreement.AgreementId);
+        _allAgreementsInstallments = _allAgreementsInstallments.OrderBy(x => x.StartingDate).ToList();
+    }
+
+    private async Task ShowAddingAgreementFromAsync()
+    {
+        var options = new ModalOptions
+        {
+            Animation = ModalAnimation.FadeInOut(.5),
+            HideCloseButton = true
+        };
+
+        var parameters = new ModalParameters();
+        parameters.Add("MemberDetails", MemberDetails);
+
+        var addAgreementModal = Modal.Show<AddAgreement>(null, parameters, options);
+        var result = await addAgreementModal.Result;
+
+        if (!result.Cancelled)
+        {
+            _agreementsList = await GetAllAgreementsAsync(MemberDetails);
+            SegregateActiveAndFinishedAgreements(_agreementsList);
+        }
+    }
+
+    private async Task ShowEditMemberForm()
+    {
+        var options = new ModalOptions
+        {
+            Animation = ModalAnimation.FadeInOut(.5),
+            HideCloseButton = true
+        };
+
+        var parameters = new ModalParameters();
+        parameters.Add("MemberDetails", MemberDetails);
+
+        var editMemberModal = Modal.Show<EditMember>(null, parameters, options);
+        var result = await editMemberModal.Result;
+
+        if (!result.Cancelled)
+        {
+            MemberDetails = await Http.GetFromJsonAsync<Member>($"api/ms/members/{MemberDetails.MemberId}");
+        }
+    }
+
+}

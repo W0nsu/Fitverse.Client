@@ -1,0 +1,82 @@
+@page "/login"
+@using Fitverse.Client.Authentication
+@using Fitverse.Client.Models
+@inject IJSRuntime JsRuntime;
+
+@layout LoginLayout
+@inject IAuthenticationService _authenticationService;
+@inject NavigationManager _navigationManager;
+
+<div class="flex flex-row justify-between h-40 px-8 mb-12 text-white text-center">
+    <div class="h-1/2 w-5/12 ml-8 my-auto">
+        <img src="img/logo.svg" alt="" class="h-3/5 my-auto">
+    </div>
+    <div class="flex flex-row justify-end w-1/5 my-auto pr-12 h-1/3">
+        <img src="icon/dot.svg" class="h-full">
+    </div>
+    
+</div>
+
+<div class="h-6">
+    @if (_showAuthenticationError)
+    {
+        <div class="bg-red-400 h-full content-center text-center">
+            <p>@_authenticationErrorMessage</p>
+        </div>
+    }
+</div>
+
+<div class="flex flex-row justify-center">
+    <EditForm Model="_model" OnValidSubmit="ExecuteLogin" class="flex flex-col justify-center items-center w-1/4 mx-auto my-16">
+        <FluentValidationValidator/>
+        <div class="flex flex-col mb-4 w-full">
+            <input class="bg-fitverseMidGray shadow-lg h-12 text-center font-thin italic outline-none" @bind="_model.Username" placeholder="Login"/>
+            <ValidationMessage For="() => _model.Username"></ValidationMessage>
+        </div>
+        <div class="flex flex-col mb-8 w-full">
+            <input type="password" class="bg-fitverseMidGray shadow-lg h-12 text-center font-thin italic outline-none" @bind="_model.Password" placeholder="Password"/>
+            <ValidationMessage For="() => _model.Password"></ValidationMessage>
+        </div>
+        <div class="flex flex-col justify-center w-1/2 h-12 bg-fitverseDarkPurple shadow-lg text-white clip-path my-auto font-bold cursor-pointer">
+            <button id="SubmitButton" class="m-1" type="submit">LOG IN</button>
+        </div>
+    </EditForm>
+</div>
+
+<style>
+    input, button, button:focus, input:focus, input[type=password], input[type=password]:focus{
+    outline: none;
+    border: none;
+    }
+    
+    #app{
+        overflow-y: hidden;
+    }
+</style>
+
+@code {
+    private readonly AuthenticationUserModel _model = new();
+
+    private bool _showAuthenticationError;
+    private string _authenticationErrorMessage = "";
+
+    private async Task ExecuteLogin()
+    {
+        await JsRuntime.InvokeVoidAsync("SubmitButtonDisable");
+        _showAuthenticationError = false;
+
+        var result = await _authenticationService.LoginAsync(_model);
+
+        if (result is not null)
+        {
+            _navigationManager.NavigateTo("/");
+        }
+        else
+        {
+            _authenticationErrorMessage = "Credentials invalid";
+            _showAuthenticationError = true;
+            await JsRuntime.InvokeVoidAsync("LoginButtonEnable");
+        }
+    }
+
+}

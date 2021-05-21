@@ -1,0 +1,422 @@
+@inject HttpClient Http
+@inject NavigationManager UriHelper;
+
+@page "/Agreements"
+@using Fitverse.Client.Models
+@using Fitverse.Client.Pages.Modals
+
+@attribute [Authorize]
+
+<div class="flex flex-row justify-between w-full py-12 px-16 h-32 select-none">
+    <div class="flex flex-row justify-around w-1/2 h-full">
+        @if (IsAgreementServiceAvalible)
+        {
+            <div class="flex flex-row bg-fitverseDarkPurple w-1/4 h-full shadow cursor-pointer" @onclick="ShowMembershipsModal">
+                <img src="icon/contract.svg" alt="" class="p-2 h-full text-white w-4/12">
+                <div class="text-xs text-white my-auto w-7/12">MEMBERSHIPS</div>
+            </div>
+        }
+        else
+        {
+            <div class="flex flex-row bg-fitverseMidGray w-1/4 h-full shadow">
+                <img src="icon/contract.svg" alt="" class="p-2 h-full text-white w-4/12">
+                <div class="text-xs text-white my-auto w-7/12">MEMBERSHIPS</div>
+            </div>
+        }
+        <div class="flex flex-row justify-between w-1/2 bg-fitverseLightGray shadow text-black">
+            <input class="text-xs font-bold my-auto w-10/12 ml-2 bg-fitverseLightGray outline-none" @bind-value="_searchText" @bind-value:event="oninput" placeholder="SEARCH BY SURNAME">
+            <img src="icon/Icon%20awesome-search.svg" alt="" class="bg-fitversePaleBlue w-8 p-2 hidden">
+        </div>
+    </div>
+    <div class="flex flex-row justify-end w-1/2">
+        <div class="flex flex-row justify-around h-1/6 w-1/4">
+            @if (totalPages == 1)
+            {
+                <div class="text-xs rounded-full w-6 h-6 flex items-center invisible"></div>
+                <div class="text-xs rounded-full w-6 h-6 flex items-center justify-center bg-fitverseCyan text-black cursor-pointer" @onclick="() => SetPageNumber(pageNumber)">@pageNumber</div>
+                <div class="text-xs rounded-full w-6 h-6 flex items-center invisible"></div>
+                <div class="text-xs rounded-full w-6 h-6 flex items-center invisible"></div>
+                <div class="text-xs rounded-full w-6 h-6 flex items-center invisible"></div>
+            }
+            else if (totalPages == 2)
+            {
+                if (pageNumber == 1)
+                {
+                    <div class="text-xs rounded-full w-6 h-6 flex items-center invisible"></div>
+                    <div class="text-xs rounded-full w-6 h-6 flex items-center justify-center bg-fitverseCyan text-black cursor-pointer" @onclick="() => SetPageNumber(pageNumber)">@pageNumber</div>
+                    <div class="text-xs rounded-full w-6 h-6 flex items-center justify-center bg-fitverseMidGray text-black cursor-pointer" @onclick="() => SetPageNumber(pageNumber+1)">@(pageNumber+1)</div>
+                    <div class="text-xs rounded-full w-6 h-6 flex items-center invisible"></div>
+                    <div class="text-xs rounded-full w-6 h-6 flex items-center invisible"></div>
+                }
+                else
+                {
+                    <div class="text-xs rounded-full w-6 h-6 flex items-center invisible"></div>
+                    <div class="text-xs rounded-full w-6 h-6 flex items-center justify-center bg-fitverseMidGray text-black cursor-pointer" @onclick="() => SetPageNumber(pageNumber-1)">@(pageNumber-1)</div>
+                    <div class="text-xs rounded-full w-6 h-6 flex items-center justify-center bg-fitverseCyan text-black cursor-pointer" @onclick="() => SetPageNumber(pageNumber)">@pageNumber</div>
+                    <div class="text-xs rounded-full w-6 h-6 flex items-center invisible"></div>
+                    <div class="text-xs rounded-full w-6 h-6 flex items-center invisible"></div>
+                }
+            }
+            else
+            {
+                @if (pageNumber > 1)
+                {
+                    <div class="text-xs rounded-full w-6 h-6 flex items-center justify-center bg-fitverseMidGray text-black cursor-pointer" @onclick="DecrementPageNumber">
+                        <img src="icon/back.svg" alt="" class="h-1/2 w-1/2"/>
+                    </div>
+                }
+                else
+                {
+                    <div class="text-xs rounded-full w-6 h-6 flex items-center invisible" @onclick="DecrementPageNumber">
+                        <img src="icon/back.svg" alt="" class="h-1/2 w-1/2"/>
+                    </div>
+                }
+
+                @if (pageNumber <= totalPages - 2)
+                {
+                    <div class="text-xs rounded-full w-6 h-6 flex items-center justify-center bg-fitverseCyan text-black cursor-pointer" @onclick="() => SetPageNumber(pageNumber)">@pageNumber</div>
+                }
+                else if (pageNumber == totalPages)
+                {
+                    <div class="text-xs rounded-full w-6 h-6 flex items-center justify-center bg-fitverseMidGray text-black cursor-pointer" @onclick="() => SetPageNumber(pageNumber - 2)">@(pageNumber - 2)</div>
+                }
+                else
+                {
+                    <div class="text-xs rounded-full w-6 h-6 flex items-center justify-center bg-fitverseMidGray text-black cursor-pointer" @onclick="() => SetPageNumber(pageNumber - 1)">@(pageNumber - 1)</div>
+                }
+
+                @if (pageNumber == totalPages - 1)
+                {
+                    <div class="text-xs rounded-full w-6 h-6 flex items-center justify-center bg-fitverseCyan text-black cursor-pointer" @onclick="() => SetPageNumber(pageNumber)">@(pageNumber)</div>
+                }
+                else if (pageNumber == totalPages)
+                {
+                    <div class="text-xs rounded-full w-6 h-6 flex items-center justify-center bg-fitverseMidGray text-black cursor-pointer" @onclick="() => SetPageNumber(pageNumber - 1)">@(pageNumber - 1)</div>
+                }
+                else
+                {
+                    <div class="text-xs rounded-full w-6 h-6 flex items-center justify-center bg-fitverseMidGray text-black cursor-pointer" @onclick="() => SetPageNumber(pageNumber + 1)">@(pageNumber + 1)</div>
+                }
+
+                @if (pageNumber == totalPages)
+                {
+                    <div class="text-xs rounded-full w-6 h-6 flex items-center justify-center bg-fitverseCyan text-black cursor-pointer" @onclick="() => SetPageNumber(pageNumber)">@(pageNumber)</div>
+                }
+                else if (pageNumber == totalPages - 1)
+                {
+                    <div class="text-xs rounded-full w-6 h-6 flex items-center justify-center bg-fitverseMidGray text-black cursor-pointer" @onclick="() => SetPageNumber(pageNumber + 1)">@(pageNumber + 1)</div>
+                }
+                else
+                {
+                    <div class="text-xs rounded-full w-6 h-6 flex items-center justify-center bg-fitverseMidGray text-black cursor-pointer" @onclick="() => SetPageNumber(pageNumber + 2)">@(pageNumber + 2)</div>
+                }
+
+
+                @if (pageNumber != totalPages)
+                {
+                    <div class="text-xs rounded-full w-6 h-6 flex items-center justify-center bg-fitverseMidGray text-black cursor-pointer" @onclick="IncrementPageNumber">
+                        <img src="icon/next.svg" alt="" class="h-1/2 w-1/2"/>
+                    </div>
+                }
+                else
+                {
+                    <div class="text-xs rounded-full w-6 h-6 flex items-center invisible" @onclick="IncrementPageNumber">
+                        <img src="icon/next.svg" alt="" class="h-1/2 w-1/2"/>
+                    </div>
+                }
+            }
+        </div>
+    </div>
+</div>
+
+<section class="flex flex-col text-left mb-auto">
+    <div class="flex flex-row justify-between h-10 top-bar">
+                <div class="flex flex-row w-11/12 justify-around cursor-pointer">
+                    <div class="w-1/5 text-left my-auto ml-16">CLIENT</div>
+                    <div class="w-1/5 text-left my-auto">AGREEMENT</div>
+                    <div class="w-1/4 text-left my-auto">INSTALLMENT PERIOD</div>
+                    <div class="w-1/5 text-left my-auto">DUE DATE</div>
+                    <div class="w-1/12 text-left my-auto">PRICE</div>
+                </div>
+                <div class="mx-16 w-20 px-2"></div>
+    </div>
+    @if (IsAgreementServiceAvalible)
+    {
+        @for (var overdueInstallmentNumber = 0; overdueInstallmentNumber < PaginatedFilteredOverdueInstallmentsList.Count; overdueInstallmentNumber++)
+        {
+            var overdueInstallment = PaginatedFilteredOverdueInstallmentsList[overdueInstallmentNumber];
+            <div class="flex flex-row justify-between h-24 @InstallmentColor(overdueInstallmentNumber + 1) bg-opacity-20">
+                <div class="flex flex-row w-11/12 justify-around cursor-pointer">
+                    <div class="w-1/5 text-left my-auto font-bold ml-16">@PaginatedFilteredOverdueInstallmentsList[overdueInstallmentNumber].MemberSurname @PaginatedFilteredOverdueInstallmentsList[overdueInstallmentNumber].MemberFirstName</div>
+                    <div class="w-1/5 text-left my-auto">@PaginatedFilteredOverdueInstallmentsList[overdueInstallmentNumber].MembershipName</div>
+                    <div class="w-1/4 text-left my-auto">@PaginatedFilteredOverdueInstallmentsList[overdueInstallmentNumber].InstallmentDetails.StartingDate.ToString("dd/MM/yyyy") - @PaginatedFilteredOverdueInstallmentsList[overdueInstallmentNumber].InstallmentDetails.EndingDate.ToString("dd/MM/yyyy")</div>
+                    <div class="w-1/5 text-left my-auto">@PaginatedFilteredOverdueInstallmentsList[overdueInstallmentNumber].InstallmentDetails.DueDate.ToString("dd/MM/yyyy")</div>
+                    <div class="w-1/12 text-left my-auto">@PaginatedFilteredOverdueInstallmentsList[overdueInstallmentNumber].InstallmentDetails.Price</div>
+                </div>
+                <div class="flex flex-col justify-center bg-fitverseCyan mx-16 my-auto h-1/3 w-20 shadow text-white text-center px-2 cursor-pointer" @onclick="() => PayForInstallment(overdueInstallment.InstallmentDetails.Id)">
+                    PAY
+                </div>
+            </div>
+        }
+    }
+    else
+    {
+        <div class="mx-auto my-8 italic text-fitverseMidGray">Overdue installments temporarily unavalible. Try again later.</div>
+    }
+    <div class="flex flex-row justify-between w-full py-8 px-16 h-24">
+            <div class="w-1/2 h-full"></div>
+            <div class="flex flex-row justify-end w-1/2">
+                <div class="flex flex-row justify-around h-1/6 w-1/4">
+            @if (totalPages == 1)
+            {
+                <div class="text-xs rounded-full w-6 h-6 flex items-center invisible"></div>
+                <div class="text-xs rounded-full w-6 h-6 flex items-center justify-center bg-fitverseCyan text-black cursor-pointer" @onclick="() => SetPageNumber(pageNumber)">@pageNumber</div>
+                <div class="text-xs rounded-full w-6 h-6 flex items-center invisible"></div>
+                <div class="text-xs rounded-full w-6 h-6 flex items-center invisible"></div>
+                <div class="text-xs rounded-full w-6 h-6 flex items-center invisible"></div>
+            }
+            else if (totalPages == 2)
+            {
+                if (pageNumber == 1)
+                {
+                    <div class="text-xs rounded-full w-6 h-6 flex items-center invisible"></div>
+                    <div class="text-xs rounded-full w-6 h-6 flex items-center justify-center bg-fitverseCyan text-black cursor-pointer" @onclick="() => SetPageNumber(pageNumber)">@pageNumber</div>
+                    <div class="text-xs rounded-full w-6 h-6 flex items-center justify-center bg-fitverseMidGray text-black cursor-pointer" @onclick="() => SetPageNumber(pageNumber+1)">@(pageNumber+1)</div>
+                    <div class="text-xs rounded-full w-6 h-6 flex items-center invisible"></div>
+                    <div class="text-xs rounded-full w-6 h-6 flex items-center invisible"></div>
+                }
+                else
+                {
+                    <div class="text-xs rounded-full w-6 h-6 flex items-center invisible"></div>
+                    <div class="text-xs rounded-full w-6 h-6 flex items-center justify-center bg-fitverseMidGray text-black cursor-pointer" @onclick="() => SetPageNumber(pageNumber-1)">@(pageNumber-1)</div>
+                    <div class="text-xs rounded-full w-6 h-6 flex items-center justify-center bg-fitverseCyan text-black cursor-pointer" @onclick="() => SetPageNumber(pageNumber)">@pageNumber</div>
+                    <div class="text-xs rounded-full w-6 h-6 flex items-center invisible"></div>
+                    <div class="text-xs rounded-full w-6 h-6 flex items-center invisible"></div>
+                }
+            }
+            else
+            {
+                @if (pageNumber > 1)
+                {
+                    <div class="text-xs rounded-full w-6 h-6 flex items-center justify-center bg-fitverseMidGray text-black cursor-pointer" @onclick="DecrementPageNumber">
+                        <img src="icon/back.svg" alt="" class="h-1/2 w-1/2"/>
+                    </div>
+                }
+                else
+                {
+                    <div class="text-xs rounded-full w-6 h-6 flex items-center invisible" @onclick="DecrementPageNumber">
+                        <img src="icon/back.svg" alt="" class="h-1/2 w-1/2"/>
+                    </div>
+                }
+
+                @if (pageNumber <= totalPages - 2)
+                {
+                    <div class="text-xs rounded-full w-6 h-6 flex items-center justify-center bg-fitverseCyan text-black cursor-pointer" @onclick="() => SetPageNumber(pageNumber)">@pageNumber</div>
+                }
+                else if (pageNumber == totalPages)
+                {
+                    <div class="text-xs rounded-full w-6 h-6 flex items-center justify-center bg-fitverseMidGray text-black cursor-pointer" @onclick="() => SetPageNumber(pageNumber - 2)">@(pageNumber - 2)</div>
+                }
+                else
+                {
+                    <div class="text-xs rounded-full w-6 h-6 flex items-center justify-center bg-fitverseMidGray text-black cursor-pointer" @onclick="() => SetPageNumber(pageNumber - 1)">@(pageNumber - 1)</div>
+                }
+
+                @if (pageNumber == totalPages - 1)
+                {
+                    <div class="text-xs rounded-full w-6 h-6 flex items-center justify-center bg-fitverseCyan text-black cursor-pointer" @onclick="() => SetPageNumber(pageNumber)">@(pageNumber)</div>
+                }
+                else if (pageNumber == totalPages)
+                {
+                    <div class="text-xs rounded-full w-6 h-6 flex items-center justify-center bg-fitverseMidGray text-black cursor-pointer" @onclick="() => SetPageNumber(pageNumber - 1)">@(pageNumber - 1)</div>
+                }
+                else
+                {
+                    <div class="text-xs rounded-full w-6 h-6 flex items-center justify-center bg-fitverseMidGray text-black cursor-pointer" @onclick="() => SetPageNumber(pageNumber + 1)">@(pageNumber + 1)</div>
+                }
+
+                @if (pageNumber == totalPages)
+                {
+                    <div class="text-xs rounded-full w-6 h-6 flex items-center justify-center bg-fitverseCyan text-black cursor-pointer" @onclick="() => SetPageNumber(pageNumber)">@(pageNumber)</div>
+                }
+                else if (pageNumber == totalPages - 1)
+                {
+                    <div class="text-xs rounded-full w-6 h-6 flex items-center justify-center bg-fitverseMidGray text-black cursor-pointer" @onclick="() => SetPageNumber(pageNumber + 1)">@(pageNumber + 1)</div>
+                }
+                else
+                {
+                    <div class="text-xs rounded-full w-6 h-6 flex items-center justify-center bg-fitverseMidGray text-black cursor-pointer" @onclick="() => SetPageNumber(pageNumber + 2)">@(pageNumber + 2)</div>
+                }
+
+
+                @if (pageNumber != totalPages)
+                {
+                    <div class="text-xs rounded-full w-6 h-6 flex items-center justify-center bg-fitverseMidGray text-black cursor-pointer" @onclick="IncrementPageNumber">
+                        <img src="icon/next.svg" alt="" class="h-1/2 w-1/2"/>
+                    </div>
+                }
+                else
+                {
+                    <div class="text-xs rounded-full w-6 h-6 flex items-center invisible" @onclick="IncrementPageNumber">
+                        <img src="icon/next.svg" alt="" class="h-1/2 w-1/2"/>
+                    </div>
+                }
+            }
+                </div>
+            </div>
+        </div>
+    
+</section>
+
+@code {
+
+    [CascadingParameter]
+    public IModalService Modal { get; set; }
+
+    private string _searchText = "";
+    private string _previousSearchText;
+    private int pageSize = 20;
+    private int pageNumber = 1;
+    private int totalPages => SetTotalPages();
+
+    private bool IsAgreementServiceAvalible = true;
+
+    List<OverdueInstallment> _overdueInstallmentsList = new();
+    List<OverdueInstallment> FilteredMembersList => _overdueInstallmentsList.Where(overdueInstallment => overdueInstallment.MemberSurname.ToLower().Contains(_searchText.ToLower())).ToList();
+
+    List<OverdueInstallment> PaginatedFilteredOverdueInstallmentsList => MembersListPagination();
+
+    protected override async Task OnInitializedAsync()
+    {
+        _overdueInstallmentsList = await GetOverdueInstallmentsAsync();
+        if (_overdueInstallmentsList is not null)
+        {
+            MembersListPagination();
+        }
+    }
+
+    private List<OverdueInstallment> MembersListPagination()
+    {
+        if (_previousSearchText != _searchText)
+        {
+            pageNumber = 1;
+            StateHasChanged();
+        }
+        _previousSearchText = _searchText;
+        return FilteredMembersList.Skip((pageNumber - 1) * pageSize).Take(pageSize).ToList();
+    }
+
+    private async Task<List<OverdueInstallment>> GetOverdueInstallmentsAsync()
+    {
+        try
+        {
+            var result = await Http.GetAsync("api/as/agreements/installments/overdue");
+            result.EnsureSuccessStatusCode();
+
+            var overdueInstallments = await result.Content.ReadFromJsonAsync<List<OverdueInstallment>>();
+            return overdueInstallments?.OrderBy(overdueInstallment => overdueInstallment.InstallmentDetails.DueDate).ToList();
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine(e);
+            IsAgreementServiceAvalible = false;
+            return new List<OverdueInstallment>();
+        }
+    }
+
+    private async Task PayForInstallment(int installmentId)
+    {
+        var options = new ModalOptions
+        {
+            Animation = ModalAnimation.FadeInOut(.3),
+            HideCloseButton = true
+        };
+
+        var parameters = new ModalParameters();
+        parameters.Add("ConfirmationMessage", "Are you sure you want to mark installment as paid?");
+
+        var checkInstallmentModal = Modal.Show<Confirmation>(null, parameters, options);
+        var result = await checkInstallmentModal.Result;
+
+        if (!result.Cancelled)
+        {
+            var httpResult = await Http.PutAsync($"api/as/agreements/installments/{installmentId}/pay", null);
+            if (httpResult.IsSuccessStatusCode)
+            {
+                _overdueInstallmentsList.Remove(_overdueInstallmentsList.FirstOrDefault(x => x.InstallmentDetails.Id == installmentId));
+            }
+        }
+
+        StateHasChanged();
+    }
+    
+    private void ShowMembershipsModal()
+    {
+        var options = new ModalOptions
+        {
+            Animation = ModalAnimation.FadeInOut(.3),
+            ContentScrollable = true,
+            HideCloseButton = true
+        };
+
+        Modal.Show<Memberships>(null, options);
+    }
+
+    private void IncrementPageNumber()
+    {
+        if (pageNumber >= totalPages)
+            return;
+        pageNumber++;
+    }
+
+    private void DecrementPageNumber()
+    {
+        if (pageNumber <= 1)
+            return;
+        pageNumber--;
+    }
+
+    private void SetPageNumber(int number)
+    {
+        if (number > totalPages)
+            return;
+        pageNumber = number;
+    }
+
+    private string InstallmentColor(int memberNumber)
+    {
+        switch (memberNumber)
+        {
+            case 2:
+            case 10:
+            case 14:
+                return "bg-fitversePaleBlue";
+            case 4:
+            case 8:
+            case 16:
+            case 20:
+                return "bg-fitverseLightPurple";
+            case 6:
+            case 18:
+                return "bg-fitverseDarkPurple";
+            case 12:
+                return "bg-fitverseCyan";
+        }
+        return "bg-white";
+    }
+
+    private int SetTotalPages()
+    {
+        var pagesCount = (float) FilteredMembersList.Count / pageSize;
+        if (pagesCount <= 0)
+        {
+            return 1;
+        }
+        if (pagesCount > (int) pagesCount)
+        {
+            return (int) pagesCount + 1;
+        }
+        return (int) pagesCount;
+    }
+
+}

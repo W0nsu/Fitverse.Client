@@ -1,0 +1,138 @@
+@using Fitverse.Client.Models
+@using Fitverse.Shared.Helpers
+@inject HttpClient Http
+
+<div class="flex flex-col" style="width: 80vw;">
+    <div class="flex flex-col">
+        <div class="flex flex-row justify-between w-full h-14 bg-fitversePaleBlue bg-opacity-20 mt-8 mb-4">
+            <div class="mx-16 my-auto font-bold">
+                Timetables
+            </div>
+            <div class="flex flex-col justify-center bg-fitverseMint mx-16 my-auto h-1/2 w-40 shadow text-white text-center px-2 cursor-pointer" @onclick="AddTimetableAsync">
+                ADD TIMETABLE
+            </div>
+        </div>
+        <div class="mb-8">
+            @if (_isCalendarServiceAvailable)
+            {
+                <div class="flex flex-row justify-between w-full h-14 top-bar">
+                    <div class="flex flex-row justify-between flex-grow">
+                        <div class="w-1/3 my-auto ml-16">CLASS TYPE</div>
+                        <div class="w-1/3 my-auto">STARTING DATE</div>
+                        <div class="w-1/3 my-auto">ENDING DATE</div>
+                        <div class="w-1/3 my-auto">CLASS  TIME</div>
+                        <div class="w-1/3 my-auto">PERIOD TYPE</div>
+                    </div>
+                    <div class="flex flex-col justify-center mr-16 my-auto h-1/2 w-40 px-2 invisible">
+                        DETAILS
+                    </div>
+                </div>
+                @for (var timetableNumber = 0; timetableNumber < _timetablesList.Count; timetableNumber++)
+                {
+                    var timetable = _timetablesList[timetableNumber];
+                    <div class="flex flex-row justify-between w-full h-14">
+                        <div class="flex flex-row justify-between flex-grow">
+                            <div class="w-1/3 my-auto ml-16">@timetable.ClassTypeName</div>
+                            <div class="w-1/3 my-auto">@timetable.StartingDate.ToString("dd/MM/yyyy")</div>
+                            <div class="w-1/3 my-auto">@timetable.EndingDate.ToString("dd/MM/yyyy")</div>
+                            <div class="w-1/3 my-auto">@timetable.ClassesStartingTime.ToString("HH:mm")</div>
+                            <div class="w-1/3 my-auto">@((PeriodType) timetable.PeriodType)</div>
+                        </div>
+                        <div class="flex flex-col justify-center bg-red-400 mr-16 my-auto h-1/2 w-40 shadow text-white text-center px-2 cursor-pointer" @onclick="async () => await DeleteTimetableAsync(timetable)">
+                                DELETE
+                        </div>
+                    </div>
+                }
+            }
+            else
+            {
+                <div class="mx-auto mt-8 italic text-fitverseMidGray">Calendar temporarily unavalible. Try again later.</div>
+            }
+        </div>
+    </div>
+</div>
+
+<style>
+    .blazored-modal{
+        padding: 0!important;
+        border: 0!important;
+    }
+    
+    .blazored-modal-header{
+        display: none!important;
+    }
+</style>
+
+@code {
+    [CascadingParameter]
+    public IModalService Modal { get; set; }
+
+    private List<Timetable> _timetablesList = new();
+    private bool _isCalendarServiceAvailable = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await GetTimetablesAsync();
+    }
+
+    private async Task DeleteTimetableAsync(Timetable timetable)
+    {
+        var options = new ModalOptions
+        {
+            Animation = ModalAnimation.FadeInOut(.3),
+            HideCloseButton = true
+        };
+
+        var parameters = new ModalParameters();
+        parameters.Add("ConfirmationMessage", $"Are you sure you want to delete the timetable?");
+
+        var deleteTimetableModal = Modal.Show<Confirmation>(null, parameters, options);
+        var result = await deleteTimetableModal.Result;
+
+        if (!result.Cancelled)
+        {
+            await Http.DeleteAsync($"api/cs/timetable/{timetable.TimetableId}");
+            await GetTimetablesAsync();
+            StateHasChanged();
+        }
+    }   
+    private async Task AddTimetableAsync()
+    {
+        var options = new ModalOptions
+        {
+            Animation = ModalAnimation.FadeInOut(.3),
+            HideCloseButton = true
+        };
+
+        var addTimetableModal = Modal.Show<AddTimetable>(null, options);
+        var result = await addTimetableModal.Result;
+
+        if (!result.Cancelled)
+        {
+            await GetTimetablesAsync();
+            StateHasChanged();
+        }
+    }
+
+    private async Task GetTimetablesAsync()
+    {
+        try
+        {
+            var result = await Http.GetAsync("api/cs/timetable");
+            result.EnsureSuccessStatusCode();
+
+            _timetablesList = await result.Content.ReadFromJsonAsync<List<Timetable>>();
+            if (_timetablesList is null)
+            {
+                throw new NullReferenceException();
+            }
+            _timetablesList = _timetablesList.OrderBy(x => x.StartingDate).ToList();
+        }
+        catch (Exception e)
+        {
+            _isCalendarServiceAvailable = false;
+            _timetablesList = new List<Timetable>();
+        }
+    }
+
+}

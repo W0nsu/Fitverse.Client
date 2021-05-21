@@ -1,0 +1,371 @@
+@page "/Calendar"
+@using Fitverse.Client.Models
+@using Fitverse.Client.Pages.Modals
+@using Fitverse.Client.Helpers
+@inject HttpClient Http
+@inject IJSRuntime JsRuntime;
+
+@attribute [Authorize]
+<div class="flex flex-row justify-between w-full py-12 px-16 h-32 select-none">
+    <div class="flex flex-row justify-around w-1/2 h-full">
+        @if (_isCalendarServiceAvailable)
+        {
+            <div class="flex flex-row bg-fitverseDarkPurple w-1/4 h-full shadow cursor-pointer" @onclick="@ShowTimetablesList">
+                <img src="icon/Icon%20metro-calendar-white.svg" alt="" class="p-2 ml-2 h-full w-1/4">
+                <div class="text-xs text-white my-auto w-7/12">TIMETABLES</div>
+            </div>
+        }
+        else
+        {
+            <div class="flex flex-row bg-fitverseMidGray w-1/4 h-full shadow">
+                <img src="icon/Icon%20metro-calendar-white.svg" alt="" class="p-2 ml-2 h-full w-1/4">
+                <div class="text-xs text-white my-auto w-7/12">TIMETABLES</div>
+            </div>
+        }
+
+        @if(_isCalendarServiceAvailable){
+            <div class="flex flex-row justify-start w-1/2">
+                <div class="flex flex-row bg-fitverseMint w-1/3 h-full shadow cursor-pointer" @onclick="@ShowClassTypesList">
+                    <div class="text-xs text-white my-auto w-full">CLASS TYPES</div>
+                </div>
+            </div>
+        }
+        else
+        {
+            <div class="flex flex-row justify-start w-1/2">
+                <div class="flex flex-row bg-fitverseMidGray w-1/3 h-full shadow">
+                    <div class="text-xs text-white my-auto w-full">CLASS TYPES</div>
+                </div>
+            </div>
+        }
+    </div>
+    <div class="flex flex-row justify-end w-1/2"></div>
+</div>
+
+<section class="flex flex-col text-left mb-auto">
+    @if (_isCalendarServiceAvailable)
+    {
+        <div class="flex flex-row justify-between h-14 mx-auto mb-8 w-1/4">
+            <img src="icon/back.svg" alt="" class="h-1/3 my-auto" @onclick="() => ChangeMonthAsync(-1)">
+                @if (_firstDayOfWeek.Month != _firstDayOfWeek.AddDays(6).Month)
+            {
+                <div class="text-2xl font-bold my-auto">@((MonthEnum) _firstDayOfWeek.Month + " - " + (MonthEnum) _firstDayOfWeek.AddDays(6).Month) </div>
+            }
+            else
+            {
+                <div class="text-2xl font-bold my-auto">@((MonthEnum) _firstDayOfWeek.Month)</div>
+            }
+            <img src="icon/next.svg" alt="" class="h-1/3 my-auto" @onclick="() => ChangeMonthAsync(1)">
+            </div>
+
+    @* PAGINATION WEEK VIEW START*@
+        <div class="flex flex-row justify-center">
+            <div class="w-6 text-right text-fitverseBackground">6</div>
+            <div class="flex flex-row justify-between w-5/6 mb-4">
+                @for (var i = 0; i <= 6; i++)
+                {
+                    <div class="flex flex-col" style="width: 12%">
+                        <div class="flex flex-col justify-center">
+                            @if (i == 6)
+                            {
+                                <div class="mx-auto text-gray-400">@(DayOfWeek.Sunday)</div>
+                            }
+                            else
+                            {
+                                <div class="mx-auto text-gray-400">@(DayOfWeek.Monday + i)</div>
+                            }
+                            <div class="flex flex-row justify-center h-8">
+                                @switch (i)
+                                {
+                                    case 0:
+                                        <div class="w-1/3 h-1/2 my-auto" @onclick="() => ChangeWeekAsync(-1)">
+                                            <img src="icon/back.svg" alt="" class="h-full w-full">
+                                        </div>
+                                        <div class="mx-auto font-bold text-2xl">@(_firstDayOfWeek.AddDays(i).Day).</div>
+                                        <div class="h-1/3 w-1/3 my-auto"></div>
+                                        break;
+                                    case 6:
+                                        <div class="h-1/3 w-1/3 my-auto"></div>
+                                        <div class="mx-auto font-bold text-2xl">@(_firstDayOfWeek.AddDays(i).Day).</div>
+                                        <div class="w-1/3 h-1/2 my-auto" @onclick="() => ChangeWeekAsync(1)">
+                                            <img src="icon/next.svg" alt="" class="h-full w-full">
+                                        </div>
+                                        break;
+                                    default:
+                                        <div class="mx-auto font-bold text-2xl">@(_firstDayOfWeek.AddDays(i).Day).</div>
+                                        break;
+                                }
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    @* PAGINATION WEEK VIEW END*@
+
+    @* CALENDAR START *@
+        <div class="flex flex-row justify-center">
+            <div class="flex flex-col w-6">
+                @for (var i = 6; i <= 22; i++)
+                {
+                    @if (i == 6)
+                    {
+                        <div>
+                            <div class="h-6"></div>
+                            <div class="h-6"></div>
+                            <div class="h-6"></div>
+                        </div>
+                    }
+                    else
+                    {
+                        <div>
+                            <div class="h-6"></div>
+                            <div class="h-6"></div>
+                        </div>
+                    }
+
+                    <div class="h-12">
+                        <div class="h-3"></div>
+                        <div class="h-6 my-auto text-center mr-4">@i</div>
+                        <div class="h-3"></div>
+                    </div>
+                }
+            </div>
+
+            <div id="calendar" class="flex flex-row justify-between w-5/6 mb-8">
+                @* GENERATED WITH JS *@
+            </div>
+            @* CALENDAR END*@
+
+        </div>
+    @* CALENDAR CONTAINERS START *@
+        @if (!_isClassListEmpty && _isCalendarVisible)
+        {
+            @for (var calendarClass = 0; calendarClass < _classList.Count; calendarClass++)
+            {
+                var singleClass = _classList[calendarClass];
+                <div class="classContainer rounded-lg mx-auto w-11/12 cursor-pointer hidden" @onclick="() => ShowClassDetails(singleClass)"></div>
+            }
+        }
+    @* CALENDAR CONTAINERS END *@
+    }
+    else
+    {
+        <div class="mx-auto my-8 italic text-fitverseMidGray">Calendar temporarily unavalible. Try again later.</div>
+    }
+</section>
+
+@code {
+
+    [CascadingParameter]
+    public IModalService Modal { get; set; }
+
+    private DateTime _currentDate;
+    private DateTime _firstDayOfWeek;
+    private DateTime _today;
+    private List<CalendarClass> _classList;
+    private bool _isCalendarVisible = true;
+    private bool _isClassListEmpty = true;
+    private bool _isCalendarServiceAvailable = true;
+
+    protected override void OnInitialized()
+    {
+        try
+        {
+            _currentDate = DateTime.Today;
+            _today = DateTime.Today;
+            _firstDayOfWeek = GetFirstDayOfWeek(_currentDate);
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine(e);
+            throw;
+        }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender && _isCalendarServiceAvailable)
+        {
+            await GetClassesAsync();
+        }
+    }
+
+    private static DateTime GetFirstDayOfWeek(DateTime date)
+    {
+        var dayOfWeek = date;
+        while (dayOfWeek.DayOfWeek != DayOfWeek.Monday)
+        {
+            dayOfWeek = dayOfWeek.AddDays(-1);
+        }
+        return dayOfWeek;
+    }
+
+    private async Task ChangeMonthAsync(int iterator)
+    {
+        await DisplayCalendarAsync();
+        var oldFirstDayOfWeek = _firstDayOfWeek;
+        if (_today == _currentDate)
+        {
+            _currentDate = _firstDayOfWeek.AddMonths(iterator);
+            _currentDate = new DateTime(_currentDate.Year, _currentDate.Month, 1);
+            _firstDayOfWeek = GetFirstDayOfWeek(_currentDate);
+            if (_firstDayOfWeek == oldFirstDayOfWeek)
+            {
+                _currentDate = _currentDate.AddMonths(iterator);
+                _firstDayOfWeek = GetFirstDayOfWeek(_currentDate);
+            }
+        }
+        else
+        {
+            _currentDate = _currentDate.AddMonths(iterator);
+            _firstDayOfWeek = GetFirstDayOfWeek(_currentDate);
+            if (_firstDayOfWeek == oldFirstDayOfWeek)
+            {
+                _currentDate = _currentDate.AddMonths(iterator);
+                _firstDayOfWeek = GetFirstDayOfWeek(_currentDate);
+            }
+        }
+        await GetClassesAsync();
+    }
+
+    private async Task ChangeWeekAsync(int iterator)
+    {
+        await DisplayCalendarAsync();
+        _firstDayOfWeek = _firstDayOfWeek.AddDays(7 * iterator);
+        _currentDate = new DateTime(_firstDayOfWeek.Year, _firstDayOfWeek.Month, 1);
+        await GetClassesAsync();
+    }
+
+    private async Task GetClassesAsync()
+    {
+        try
+        {
+            var builder = new UriBuilder($"{Http.BaseAddress}api/cs/classes")
+            {
+                Query = BuildQuery()
+            };
+            var result = await Http.GetAsync(builder.Uri);
+            result.EnsureSuccessStatusCode();
+
+            _classList = await result.Content.ReadFromJsonAsync<List<CalendarClass>>();
+            if (_classList is null)
+            {
+                throw new Exception();
+            }
+            _isClassListEmpty = !_classList.Any();
+
+            if (!_isClassListEmpty)
+            {
+                await RefreshCalendarAsync();
+                StateHasChanged();
+            }
+            await DisplayCalendarAsync();
+            await ShowClassesOnCalendarAsync();
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine(e);
+            _isCalendarServiceAvailable = false;
+            _classList = new List<CalendarClass>();
+            StateHasChanged();
+        }
+    }
+
+    private string BuildQuery()
+    {
+        var query = $"DateFrom={_firstDayOfWeek.Year}-{_firstDayOfWeek.Month}-{_firstDayOfWeek.Day}&DateTo={_firstDayOfWeek.AddDays(6).Year}-{_firstDayOfWeek.AddDays(6).Month}-{_firstDayOfWeek.AddDays(6).Day}";
+        return query;
+    }
+
+    private async Task ShowClassesOnCalendarAsync()
+    {
+        var classCalculator = new ClassCalculator
+            (
+            new DateTime(2021, 1, 1, 5, 0, 0),
+            new DateTime(2021, 1, 1, 23, 0, 0)
+            );
+
+        if (_classList is not null && !_isClassListEmpty)
+        {
+            var calendarClassInFrontendList = _classList
+                .Select(calendarClass => classCalculator.ClassTimeToIndexOnCalendar(calendarClass))
+                .ToList();
+            await JsRuntime.InvokeVoidAsync("DisplayClasses", calendarClassInFrontendList);
+        }
+    }
+
+    private async Task DisplayCalendarAsync()
+    {
+        await JsRuntime.InvokeVoidAsync("DisplayCalendar");
+    }
+
+    private async Task RefreshCalendarAsync()
+    {
+        _isCalendarVisible = false;
+        StateHasChanged();
+        _isCalendarVisible = true;
+        await DisplayCalendarAsync();
+    }
+
+    private async Task ShowClassDetails(CalendarClass calendarClass)
+    {
+        var options = new ModalOptions
+        {
+            Animation = ModalAnimation.FadeInOut(.3),
+            ContentScrollable = true,
+            HideCloseButton = true
+        };
+
+        var parameters = new ModalParameters();
+        parameters.Add("CalendarClass", await GetClassByIdAsync(calendarClass));
+
+        var classDetailsModal = Modal.Show<ClassDetails>(null, parameters, options);
+        _ = await classDetailsModal.Result;
+    }
+
+    private async Task<CalendarClass> GetClassByIdAsync(CalendarClass calendarClass)
+    {
+        try
+        {
+            var result = await Http.GetAsync($"api/cs/classes/{calendarClass.ClassId}");
+            result.EnsureSuccessStatusCode();
+
+            var calendarClassDetails = await result.Content.ReadFromJsonAsync<CalendarClass>();
+            return calendarClassDetails;
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine(e);
+            _isCalendarServiceAvailable = false;
+            return new CalendarClass();
+        }
+    }
+
+    private async Task ShowTimetablesList()
+    {
+        var options = new ModalOptions
+        {
+            Animation = ModalAnimation.FadeInOut(.3),
+            ContentScrollable = true,
+            HideCloseButton = true
+        };
+
+        var timetablesModal = Modal.Show<Timetables>(null, options);
+        _ = await timetablesModal.Result;
+    }
+
+    private async Task ShowClassTypesList()
+    {
+        var options = new ModalOptions
+        {
+            Animation = ModalAnimation.FadeInOut(.3),
+            ContentScrollable = true,
+            HideCloseButton = true
+        };
+
+        var timetablesModal = Modal.Show<ClassTypes>(null, options);
+        _ = await timetablesModal.Result;
+    }
+
+}

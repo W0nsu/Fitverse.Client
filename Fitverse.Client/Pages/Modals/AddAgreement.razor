@@ -1,0 +1,72 @@
+@using Fitverse.Client.Models
+@inject HttpClient Http
+@inject IJSRuntime JsRuntime;
+
+<div class="flex flex-row justify-center" style="width: 50vw;">
+    <EditForm Model="@newAgreement" OnValidSubmit="@AddAsync" class="flex flex-col justify-center items-center w-1/2 mx-auto my-16">
+        <FluentValidationValidator/>
+        <div class="flex flex-col mb-8 w-full">
+            <label class="text-center">Membership</label>
+            <select class="h-10" @bind="newAgreement.MembershipId">
+                <option value="-1"> ----- </option>
+                @if (_membershipsList is not null)
+                {
+                    @foreach (var membership in _membershipsList)
+                    {
+                        <option value="@membership.MembershipId">@membership.Name</option>
+                    }
+                }
+            </select>
+            <ValidationMessage For="() => newAgreement.MembershipId"></ValidationMessage>
+        </div>
+        <div class="flex flex-col mb-8 w-full">
+            <label class="text-center">Starting Date</label>
+            <input type="date" class="bg-fitverseLightPurple bg-opacity-20 h-10 border border-black" @bind="newAgreement.StartingDate"/>
+            <ValidationMessage For="() => newAgreement.StartingDate"></ValidationMessage>
+        </div>
+        <div class="flex flex-col justify-center w-1/2 bg-fitverseMint shadow-md text-white text-center px-2 cursor-pointer">
+            <button id="SubmitButton" class="m-1" type="submit">ADD AGREEMENT</button>
+        </div>
+    </EditForm>
+</div>
+
+<style>
+    .blazored-modal{
+        padding: 0!important;
+        border: 0!important;
+    }
+    
+    .blazored-modal-header{
+        display: none!important;
+    }
+</style>
+
+@code {
+    [CascadingParameter]
+    BlazoredModalInstance ModalInstance { get; set; }
+
+    [Parameter]
+    public Member MemberDetails { get; set; }
+
+    private NewAgreement newAgreement = new(){ MemberId = 0, MembershipId = 0, StartingDate = DateTime.Today};
+    private List<Membership> _membershipsList = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        _membershipsList = await GetAllMembershipsAsync();
+    }
+
+    private async Task<List<Membership>> GetAllMembershipsAsync()
+    {
+        return await Http.GetFromJsonAsync<List<Membership>>($"api/ms/agreement/memberships");
+    }
+
+    private async Task AddAsync()
+    {
+        await JsRuntime.InvokeVoidAsync("SubmitButtonDisable");
+        newAgreement.MemberId = MemberDetails.MemberId;
+        _ = await Http.PostAsJsonAsync("api/ms/agreement", newAgreement);
+
+        await ModalInstance.CloseAsync(ModalResult.Ok(""));
+    }
+}

@@ -1,0 +1,63 @@
+@using Fitverse.Client.Models
+@inject HttpClient Http
+@inject IJSRuntime JsRuntime;
+
+<div class="flex flex-row justify-center" style="width: 70vw;">
+    <EditForm Model="@classType" OnValidSubmit="@AddAsync" class="flex flex-col justify-center items-center w-1/2 mx-auto my-16">
+        <FluentValidationValidator/>
+        <div class="flex flex-col mb-8 w-full">
+            <label class="text-center">Name</label>
+            <input class="bg-fitverseDarkPurple bg-opacity-20 h-8 border border-black" @bind="classType.Name"/>
+            <ValidationMessage For="() => classType.Name"></ValidationMessage>
+        </div>
+        <div class="flex flex-col mb-8 w-full">
+            <label class="text-center">Description</label>
+            <input class="bg-fitverseLightPurple bg-opacity-20 h-8 border border-black" @bind="classType.Description"/>
+            <ValidationMessage For="() => classType.Description"></ValidationMessage>
+        </div>
+        <div class="flex flex-col mb-8 w-full">
+            <label class="text-center">Limit</label>
+            <input type="number" class="bg-fitversePaleBlue bg-opacity-20 h-8 border border-black" @bind="classType.Limit"/>
+            <ValidationMessage For="() => classType.Limit"></ValidationMessage>
+        </div>
+        <div class="flex flex-col mb-8 w-full">
+            <label class="text-center">Duration</label>
+            <input type="number" class="bg-fitverseCyan bg-opacity-20 h-8 border border-black" @bind="classType.Duration"/>
+            <ValidationMessage For="() => classType.Duration"></ValidationMessage>
+        </div>      
+        <div class="flex flex-col mb-8 w-full">
+            <label class="text-center">Room</label>
+            <input class="bg-fitversePaleBlue bg-opacity-20 h-8 border border-black" @bind="classType.Room"/>
+            <ValidationMessage For="() => classType.Room"></ValidationMessage>
+        </div>
+        <div class="flex flex-col justify-center w-1/3 bg-fitverseMint shadow-md text-white text-center px-2 cursor-pointer">
+            <button id="SubmitButton" class="m-1" type="submit">ADD CLASS TYPE</button>
+        </div>
+    </EditForm>
+</div>
+
+<style>
+    .blazored-modal{
+        padding: 0!important;
+        border: 0!important;
+    }
+    
+    .blazored-modal-header{
+        display: none!important;
+    }
+</style>
+
+@code {
+    [CascadingParameter]
+    BlazoredModalInstance ModalInstance { get; set; }
+
+    private ClassType classType = new();
+
+    private async Task AddAsync()
+    {
+        await JsRuntime.InvokeVoidAsync("SubmitButtonDisable");
+        _ = await Http.PostAsJsonAsync("api/cs/calendar/settings", classType);
+
+        await ModalInstance.CloseAsync();
+    }
+}
